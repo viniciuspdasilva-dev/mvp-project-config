@@ -1,0 +1,115 @@
+services:
+  db-payment-service:
+    image: postgres:13.3-alpine
+    container_name: "mvp-payment-service-db"
+    hostname: postgres-server
+    labels:
+      br.dev.pos.author: "Vinicius Pereira da Silva <vinicius.dev@gmail.com>"
+      br.dev.pos.description: "PostgreSQL database for MVP Payment Service"
+      br.dev.pos.license: "MIT"
+    expose:
+      - '5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: payment-service
+    networks:
+      net-mvp-saga:
+        ipv4_address: 10.200.0.200
+
+  db-inventory-service:
+    image: postgres:13.3-alpine
+    container_name: "mvp-inventory-service-db"
+    hostname: postgres-server
+    labels:
+      br.dev.pos.author: "Vinicius Pereira da Silva <vinicius.dev@gmail.com>"
+      br.dev.pos.description: "PostgreSQL database for MVP Inventory Service"
+      br.dev.pos.license: "MIT"
+    expose:
+      - '5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: inventory-service
+    networks:
+      net-mvp-saga:
+        ipv4_address: 10.200.0.201
+
+
+  db-order-service:
+    image: postgres:13.3-alpine
+    container_name: "mvp-order-service-db"
+    hostname: postgres-server
+    labels:
+      br.dev.pos.author: "Vinicius Pereira da Silva <vinicius.dev@gmail.com>"
+      br.dev.pos.description: "PostgreSQL database for MVP Order Service"
+      br.dev.pos.license: "MIT"
+    expose:
+      - '5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: order-service
+    networks:
+      net-mvp-saga:
+        ipv4_address: 10.200.0.202
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      net-mvp-saga:
+        ipv4_address: 10.200.0.198
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://10.200.0.199:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      net-mvp-saga:
+        ipv4_address: 10.200.0.199
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - '5775:5775/udp'
+      - '6831:6831/udp'
+      - '6832:6832/udp'
+      - '5778:5778'
+      - '14268:14268'
+      - '14250:14250'
+      - '16686:16686'
+    expose:
+      - '5775'
+      - '6831'
+      - '6832'
+      - '5778'
+      - '14268'
+      - '14250'
+      - '16686'
+    networks:
+      net-mvp-saga:
+        ipv4_address: 10.200.0.197
+
+networks:
+  net-mvp-saga:
+    name: net-mvp-saga
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.200.0.0/24
